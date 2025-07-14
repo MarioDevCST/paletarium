@@ -1,13 +1,1428 @@
+/* Estilos generales de la aplicación */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5; /* Un fondo suave para toda la app */
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+/* Estilos para la cabecera cuando NO está logeado (App.js) */
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 2.5em;
+}
+
+.app-logo {
+  height: 50px;
+  width: 50px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* Estilos para el contenedor principal del contenido */
+.App main {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* --- ESTILOS PARA EL HEADER CUANDO ESTÁ LOGEADO (Header.js) --- */
+.app-header-logged-in {
+  background-color: #282c34;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between; /* Alinea el contenido a los extremos */
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* margin-bottom: 20px; Eliminar este margen si el layout principal ya lo maneja */
+}
+
+.header-content-logged-in {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Menos espacio que en el header de no logeado */
+}
+
+.header-content-logged-in .app-logo {
+  height: 40px; /* Un poco más pequeño para el header logeado */
+  width: 40px;
+}
+
+.header-content-logged-in h1 {
+  margin: 0;
+  font-size: 1.8em; /* Tamaño de fuente más pequeño para el header logeado */
+}
+
+.user-info-and-logout {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Estilos para el contenedor del avatar y la información de texto */
+.user-avatar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* Hace la imagen circular */
+  object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
+  border: 2px solid #007bff; /* Borde para el avatar */
+}
+
+.user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #555; /* Color de fondo para el placeholder */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 1.2em;
+  font-weight: bold;
+  border: 2px solid #007bff;
+}
+
+.user-text-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Alinea el texto a la izquierda */
+}
+
+.user-display-name {
+  font-size: 1em;
+  color: white; /* Color blanco para el nombre */
+  font-weight: 600;
+}
+
+.user-display-role {
+  font-size: 0.8em; /* Tamaño más pequeño para el rol */
+  color: #a0a0a0; /* Un color más suave para el rol */
+  margin-top: 2px;
+}
+
+.logout-button {
+  padding: 8px 15px;
+  background-color: #dc3545; /* Rojo para el botón de cerrar sesión */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}
+
+/* --- ESTILOS PARA EL SIDEMENU Y EL LAYOUT DE CONTENIDO LOGEADO --- */
+
+.app-content-logged-in {
+  display: flex; /* Usa flexbox para el layout de SideMenu y Main Content */
+  min-height: calc(
+    100vh - 80px
+  ); /* Ajusta la altura para que ocupe el resto de la pantalla, restando la altura del header */
+}
+
+.side-menu {
+  width: 220px; /* Ancho fijo para el menú lateral */
+  background-color: #34495e; /* Color de fondo oscuro para el menú */
+  color: white;
+  padding: 20px 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Evita que el menú se encoja */
+}
+
+.side-menu ul {
+  list-style: none; /* Elimina los puntos de la lista */
+  padding: 0;
+  margin: 0;
+}
+
+.side-menu li {
+  margin-bottom: 10px;
+}
+
+.side-menu a {
+  display: block; /* Hace que todo el área del li sea clicable */
+  padding: 12px 20px;
+  color: white;
+  text-decoration: none; /* Elimina el subrayado */
+  font-size: 1.1em;
+  transition: background-color 0.3s ease;
+}
+
+.side-menu a:hover {
+  background-color: #2c3e50; /* Color de fondo al pasar el ratón */
+}
+
+.side-menu a.active {
+  /* Para resaltar el enlace activo (requeriría lógica en SideMenu) */
+  background-color: #007bff;
+  font-weight: bold;
+}
+
+.main-content-logged-in {
+  flex-grow: 1; /* Permite que el contenido principal ocupe el espacio restante */
+  padding: 20px;
+  background-color: #fdfdfd; /* Fondo claro para el contenido */
+  overflow-y: auto; /* Permite scroll si el contenido es largo */
+}
+
+/* --- ESTILOS PARA EL PANEL DE ADMINISTRACIÓN (AdminPanel.js) --- */
+.admin-panel-container {
+  width: 100%; /* Ocupa todo el ancho disponible en el main-content-logged-in */
+  padding: 15px; /* Reducido de 20px a 15px */
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-panel-container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 15px; /* Reducido de 25px a 15px */
+  font-size: 1.8em; /* Reducido de 2.2em a 1.8em */
+}
+
+.admin-nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px; /* Reducido de 15px a 10px */
+  margin-bottom: 20px; /* Reducido de 30px a 20px */
+  padding-bottom: 10px; /* Reducido de 15px a 10px */
+  border-bottom: 1px solid #eee;
+}
+
+.admin-nav-button {
+  padding: 8px 15px; /* Reducido de 10px 20px a 8px 15px */
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9em; /* Reducido de 1em a 0.9em */
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-nav-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.admin-nav-button.active {
+  background-color: #0056b3;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.admin-content-area {
+  padding: 15px; /* Reducido de 20px a 15px */
+  background-color: #fdfdfd;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+/* Estilos para los títulos dentro de AdminUserList, BarcosPage, etc. */
+.admin-content-area h3 {
+  font-size: 1.5em;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* --- ESTILOS MEJORADOS PARA LA TABLA DE USUARIOS EN AdminUserList --- */
+.admin-user-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.admin-user-table th,
+.admin-user-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.admin-user-table th {
+  background-color: #f8f8f8;
+  color: #333;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9em;
+}
+
+.admin-user-table th:first-child {
+  border-top-left-radius: 8px;
+}
+.admin-user-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.admin-user-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-user-table tr:nth-child(even) {
+  background-color: #fcfcfc;
+}
+
+.admin-user-table tr:hover {
+  background-color: #f0f0f0;
+}
+
+.admin-user-table .approve-button {
+  padding: 7px 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-weight: bold;
+}
+
+.admin-user-table .approve-button:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.status-pending {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-approved {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.role-admin {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.role-user {
+  color: #6c757d;
+}
+
+/* --- NUEVOS ESTILOS PARA EL AVATAR EN LA TABLA DE USUARIOS --- */
+.table-user-avatar {
+  width: 30px; /* Tamaño más pequeño para la tabla */
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e0e0e0;
+  vertical-align: middle; /* Alinea verticalmente con el texto */
+}
+
+.table-user-avatar-placeholder {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ccc; /* Un gris más claro para el placeholder de tabla */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #666;
+  font-size: 0.8em;
+  font-weight: bold;
+  border: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.user-edit-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-edit-container h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+}
+
+.user-edit-container .form-group label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.user-edit-container .form-group input[type="text"],
+.user-edit-container .form-group input[type="email"],
+.user-edit-container .form-group select,
+.user-edit-container .form-group textarea {
+  /* Añadido textarea */
+  width: calc(100% - 20px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.user-edit-container .form-group select {
+  height: 40px;
+  background-color: white;
+}
+
+.user-edit-container .auth-button {
+  margin-top: 20px;
+}
+
+.user-edit-container .auth-message {
+  margin-top: 20px;
+}
+
+.admin-user-table .modify-button {
+  padding: 7px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.admin-user-table .modify-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+/* --- ESTILOS PARA EL BUSCADOR Y ORDENAR POR USUARIOS --- */
+.search-sort-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.user-search-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 1em;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-search-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+.user-sort-select {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  background-color: white;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2C197.9l-116.7-116.7c-4.7-4.7-12.3-4.7-17%2C0L5.4%2C197.9c-4.7%2C4.7-4.7%2C12.3%2C0%2C17c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l99.7-99.7l99.7%2C99.7c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0C291.7%2C210.2%2C291.7%2C202.6%2C287%2C197.9z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 30px;
+}
+
+.user-sort-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+/* --- ESTILOS PARA EL BOTÓN DE ELIMINAR EN USEREDITPAGE --- */
+.delete-button {
+  padding: 12px 20px;
+  background-color: #dc3545; /* Rojo para eliminar */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: #c82333;
+}
+
+/* --- ESTILOS PARA EL FORMULARIO DE AÑADIR/EDITAR ITEMS (ej. Barcos) --- */
+.add-item-form-container {
+  max-width: 500px; /* Ancho máximo para el formulario */
+  margin: 20px auto; /* Centrar y añadir margen */
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.add-item-form-container h4 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.6em;
+}
+
+/* Reutiliza .form-group, input[type="text"], input[type="number"], select, .auth-button, .auth-message de AuthForms.css */
+/* Asegúrate de que los estilos de .form-group y sus inputs/selects sean generales o se adapten bien */
+
+.add-item-form-container .form-group label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.add-item-form-container .form-group input[type="text"],
+.add-item-form-container .form-group input[type="number"],
+.add-item-form-container .form-group select,
+.add-item-form-container .form-group textarea {
+  /* Añadido textarea */
+  width: calc(100% - 20px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.add-item-form-container .form-group select {
+  height: 40px;
+  background-color: white;
+}
+
+.add-item-form-container .auth-button {
+  margin-top: 20px;
+  width: 100%; /* Botón de ancho completo */
+}
+
+.add-item-form-container .auth-message {
+  margin-top: 15px;
+}
+
+/* --- ESTILOS PARA EL CONTENEDOR DE BUSCADOR, ORDENAR Y CREAR (BarcosPage) --- */
+.search-sort-create-container {
+  display: flex;
+  justify-content: center; /* Centra los elementos */
+  align-items: center; /* Alinea verticalmente */
+  gap: 15px; /* Espacio entre elementos */
+  margin-top: 20px; /* Margen superior para separarlo del título */
+  margin-bottom: 20px; /* Margen inferior para separarlo de la tabla */
+  flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+}
+
+.create-new-item-button {
+  padding: 10px 20px;
+  background-color: #28a745; /* Verde para el botón de crear */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  white-space: nowrap; /* Evita que el texto se rompa */
+}
+
+.create-new-item-button:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+}
+
+/* --- ESTILOS PARA LA PÁGINA DE EDICIÓN DE BARCO (BoatEditPage.js) --- */
+.boat-edit-container {
+  width: 100%;
+  max-width: 600px; /* Ancho máximo para el formulario de edición */
+  margin: 0 auto; /* Centra el contenedor */
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.boat-edit-container h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+}
+
+/* Reutilizamos .form-group, input[type="text"], input[type="email"], select, .auth-button, .auth-message de AuthForms.css */
+/* Reutilizamos .delete-button de index.css */
+
+.boat-edit-container .form-group label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.boat-edit-container .form-group input[type="text"],
+.boat-edit-container .form-group input[type="email"],
+.boat-edit-container .form-group select,
+.boat-edit-container .form-group textarea {
+  /* Añadido textarea */
+  width: calc(100% - 20px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.boat-edit-container .form-group select {
+  height: 40px;
+  background-color: white;
+}
+
+.boat-edit-container .auth-button {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.boat-edit-container .delete-button {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.boat-edit-container .auth-message {
+  margin-top: 20px;
+}
+
+/* --- NUEVOS ESTILOS PARA LA PÁGINA PENDINGAPPROVALPAGE --- */
+.pending-approval-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Ocupa toda la altura de la ventana */
+  background-color: #f0f2f5; /* Fondo similar al del cuerpo */
+}
+
+.pending-approval-content {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 500px; /* Ancho máximo para el contenido */
+  width: 90%; /* Ancho responsivo */
+}
+
+.pending-approval-content h2 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 2em;
+}
+
+.pending-approval-content p {
+  color: #555;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.pending-approval-content .auth-button {
+  /* Reutiliza el estilo del botón de autenticación */
+  margin-top: 25px;
+  padding: 12px 25px;
+  font-size: 1em;
+}
+
+/* --- ESTILOS PARA LA VISTA DE CARDS DE CARGAS (PARA MOZO DE ALMACÉN) --- */
+.loads-cards-container {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(280px, 1fr)
+  ); /* Columnas responsivas */
+  gap: 20px; /* Espacio entre las cards */
+  padding: 20px;
+  background-color: #fdfdfd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.load-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 8px solid transparent; /* Borde izquierdo para el color dinámico */
+}
+
+.load-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  /* background-color: #007bff; Eliminado para usar color dinámico */
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.load-status-pending {
+  background-color: #ffc107; /* Amarillo para pendiente */
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.load-status-completed {
+  background-color: #28a745; /* Verde para completado */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.card-body {
+  padding: 15px;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.card-body p {
+  margin: 5px 0;
+}
+
+.card-body strong {
+  color: #555;
+}
+
+.card-meta {
+  font-size: 0.8em;
+  color: #777;
+  margin-top: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.card-actions {
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-top: 1px solid #eee;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.card-actions .modify-button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.card-actions .modify-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Nuevo estilo para el botón "Ver Detalles" (reemplaza "Añadir Palet" en CargasPage) */
+.add-palet-button {
+  /* Renombrado para ser más genérico, pero mantiene el estilo */
+  padding: 8px 15px;
+  background-color: #6c757d; /* Un gris oscuro */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.add-palet-button:hover {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+}
+
+/* --- ESTILOS PARA EL MODAL (AddPaletForm) --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Asegura que esté por encima de otros elementos */
+}
+
+.modal-content {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-content h3 {
+  text-align: center;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.modal-content .form-group label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.modal-content .form-group select,
+.modal-content .form-group input[type="number"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+/* --- NUEVOS ESTILOS PARA BOTONES EN MODALES (ManagePaletProductsModal.js) --- */
+.add-product-to-palet-button {
+  padding: 8px 15px;
+  font-size: 0.9em;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px; /* Añadido para separación */
+  width: 100%; /* Ocupa todo el ancho disponible */
+}
+
+.add-product-to-palet-button:hover {
+  background-color: #0056b3;
+}
+
+.remove-product-button {
+  padding: 3px 8px;
+  font-size: 0.7em;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px; /* Cambiado a 4px para consistencia, antes era 50% */
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background-color 0.3s ease;
+  /* Asegurar que sea un círculo si se desea, o un cuadrado redondeado */
+  width: 24px; /* Tamaño fijo para el botón 'X' */
+  height: 24px; /* Tamaño fijo para el botón 'X' */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.remove-product-button:hover {
+  background-color: #c82333;
+}
+
+/* Estilos para los botones principales (Guardar/Crear y Cancelar) */
+.auth-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-button:hover {
+  background-color: #218838;
+}
+
+.cancel-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  margin-left: 10px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.palet-products-preview {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.palet-products-preview h4 {
+  margin-top: 0;
+  color: #555;
+  font-size: 1.1em;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.palet-products-preview ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.palet-products-preview li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+  font-size: 0.9em;
+}
+
+.palet-products-preview li:last-child {
+  border-bottom: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-actions .auth-button {
+  /* Botón de crear palet */
+  padding: 10px 20px;
+  width: auto; /* Ancho automático para que no ocupe todo el ancho */
+}
+
+.modal-actions .cancel-button {
+  padding: 10px 20px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease;
+  width: auto;
+}
+
+.modal-actions .cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.auth-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.auth-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.auth-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* --- NUEVOS ESTILOS PARA CARGADETAILPAGE --- */
+.load-detail-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.load-detail-container .back-button {
+  padding: 8px 15px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.load-detail-container .back-button:hover {
+  background-color: #5a6268;
+}
+
+.load-detail-container h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+}
+
+.load-info-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-left: 8px solid transparent; /* Borde izquierdo para el color dinámico */
+  margin-bottom: 30px;
+}
+
+.load-info-card .card-header {
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.load-info-card .card-header h4 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.load-info-card .card-body {
+  padding: 15px;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.load-info-card .card-body p {
+  margin: 5px 0;
+}
+
+.load-info-card .card-body strong {
+  color: #555;
+}
+
+.load-info-card .card-meta {
+  font-size: 0.8em;
+  color: #777;
+  margin-top: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.load-info-card .card-actions {
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-top: 1px solid #eee;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.load-info-card .modify-button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.load-info-card .modify-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.complete-load-button {
+  padding: 8px 15px;
+  background-color: #28a745; /* Verde para completar */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.complete-load-button:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+}
+
+.palets-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.palet-card {
+  background-color: #fefefe; /* Fondo base de la tarjeta (blanco) */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-left: 8px solid transparent; /* Borde izquierdo para el color dinámico */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 300px; /* <-- Tamaño máximo del palet card */
+}
+
+.palet-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos de borde izquierdo para el tipo de palet (se mantienen) */
+.palet-card-type-seco {
+  border-left-color: #f5cba7; /* Seco */
+}
+
+.palet-card-type-refrigerado {
+  border-left-color: #abebc6; /* Refrigerado */
+}
+
+.palet-card-type-congelado {
+  border-left-color: #aed6f1; /* Congelado */
+}
+
+.palet-card-type-técnico {
+  border-left-color: #d2b4de; /* Técnico */
+}
+
+.palet-card-header {
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Borde más sutil */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #333; /* Color de texto por defecto para el header */
+}
+
+/* Estilos de fondo para el HEADER según el tipo de palet (colores exactos solicitados) */
+.palet-header-type-seco {
+  background-color: #f5cba7; /* Seco */
+}
+
+.palet-header-type-refrigerado {
+  background-color: #abebc6; /* Refrigerado */
+}
+
+.palet-header-type-congelado {
+  background-color: #aed6f1; /* Congelado */
+}
+
+.palet-header-type-técnico {
+  background-color: #d2b4de; /* Técnico */
+}
+
+.palet-card-header h5 {
+  margin: 0;
+  font-size: 1em;
+}
+
+/* Los colores de los spans de tipo pueden ser más suaves o transparentes */
+.palet-type-seco {
+  background-color: rgba(245, 203, 167, 0.7); /* Color más suave para el span */
+  color: #333;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+
+.palet-type-refrigerado {
+  background-color: rgba(171, 235, 198, 0.7);
+  color: #333;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+
+.palet-type-congelado {
+  background-color: rgba(174, 214, 241, 0.7);
+  color: #333;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+
+.palet-type-técnico {
+  background-color: rgba(210, 180, 222, 0.7);
+  color: #333;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+
+.palet-card-body {
+  padding: 15px;
+  font-size: 0.9em;
+  color: #444;
+}
+
+.palet-card-body p {
+  margin: 5px 0;
+}
+
+.palet-card-body strong {
+  color: #666;
+}
+
+.palet-card-body ul {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 5px 0;
+}
+
+.palet-card-body li {
+  margin-bottom: 3px;
+}
+
+.palet-card-meta {
+  font-size: 0.75em;
+  color: #888;
+  margin-top: 10px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA LOS BOTONES DENTRO DE PALET-CARD --- */
+.palet-card .card-actions .modify-button,
+.palet-card .card-actions .delete-button {
+  padding: 6px 12px; /* Reducir padding */
+  font-size: 0.8em; /* Reducir tamaño de fuente */
+  border-radius: 4px; /* Asegurar bordes redondeados */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.palet-card .card-actions .modify-button:hover,
+.palet-card .card-actions .delete-button:hover {
+  transform: translateY(-1px);
+}
+
+.palet-card .card-actions .delete-button {
+  margin-left: 8px; /* Ajustar el margen entre botones */
+  background-color: #dc3545; /* Color para el botón de eliminar */
+  color: white;
+  border: none;
+}
+
+.palet-card .card-actions .delete-button:hover {
+  background-color: #c82333;
+}
+
+/* --- ESTILOS PARA LOADPALETSELECTIONPAGE --- */
+.load-palet-selection-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 25px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.load-palet-selection-container h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+}
+
+.palet-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.palet-selection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.palet-selection-item .palet-info {
+  flex-grow: 1;
+}
+
+.palet-selection-item .palet-info h4 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.palet-selection-item .palet-info p {
+  margin: 3px 0;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.palet-selection-item .palet-info h5 {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  color: #444;
+  font-size: 0.95em;
+}
+
+.palet-selection-item .palet-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.palet-selection-item .palet-info li {
+  font-size: 0.85em;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.palet-selection-item .palet-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Estilos para el checkbox cuadrado */
+.palet-selection-item .palet-checkbox input[type="checkbox"] {
+  /* Ocultar el checkbox nativo */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #007bff; /* Borde azul */
+  border-radius: 4px; /* Ligeramente redondeado */
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.palet-selection-item .palet-checkbox input[type="checkbox"]:checked {
+  background-color: #007bff; /* Fondo azul cuando está marcado */
+  border-color: #007bff;
+}
+
+/* Icono de checkmark para el checkbox */
+.palet-selection-item .palet-checkbox input[type="checkbox"]:checked::before {
+  content: "\2713"; /* Unicode checkmark */
+  display: block;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  line-height: 20px; /* Ajustar para centrar verticalmente */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.palet-selection-item .palet-checkbox label {
+  font-size: 0.9em;
+  color: #555;
+  cursor: pointer;
+}
+
+.selection-actions {
+  margin-top: 30px;
+  text-align: center;
 }

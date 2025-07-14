@@ -1,0 +1,114 @@
+/* Estilos generales para el contenedor del formulario */
+.auth-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 30px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.auth-container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 2em;
+}
+
+/* Estilos para los grupos de input (label + input) */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-weight: bold;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="text"] {
+  /* Añadido text por si acaso para futuros formularios */
+  width: calc(
+    100% - 20px
+  ); /* Resta el padding para que el ancho sea correcto */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus,
+.form-group input[type="text"]:focus {
+  border-color: #007bff; /* Un color de enfoque agradable */
+  outline: none; /* Elimina el contorno por defecto del navegador */
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos para el botón de enviar */
+.auth-button {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-button:hover {
+  background-color: #0056b3;
+}
+
+.auth-button:active {
+  background-color: #004085;
+}
+
+/* Estilos para mensajes de error y éxito */
+.auth-message.error {
+  color: #dc3545; /* Rojo para errores */
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.auth-message.success {
+  color: #28a745; /* Verde para éxito */
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+/* Estilos para el texto de alternar entre login/register */
+.auth-toggle-text {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+}
+
+.auth-toggle-text button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 1em;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-toggle-text button:hover {
+  color: #0056b3;
+}
