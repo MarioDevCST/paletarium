@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
   collection,
@@ -6,11 +6,10 @@ import {
   getDocs,
   doc,
   getDoc,
-  updateDoc,
   where,
-  addDoc,
 } from "firebase/firestore";
-import { determinePaletType } from "../utils/paletUtils";
+import { savePalet } from "../services/paletService"; // Importa la función del servicio
+import { determinePaletType } from "../utils/paletUtils"; // Importa la función de utilidad
 
 function ManagePaletProductsModal({
   loadId,
@@ -23,50 +22,39 @@ function ManagePaletProductsModal({
 }) {
   const [productsList, setProductsList] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
-  const [selectedProductUnit, setSelectedProductUnit] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [tempPaletProducts, setTempPaletProducts] = useState(
+  const [lote, setLote] = useState(""); // Nuevo estado para el Lote
+  const [fechaCaducidad, setFechaCaducidad] = useState(""); // Nuevo estado para la Fecha de caducidad
+  const [formatoPalet, setFormatoPalet] = useState(""); // Nuevo estado para el Tipo de Palet (Europeo, Americano, Otros)
+  const [paletProducts, setPaletProducts] = useState(
     initialPaletProducts || []
   );
-  const [paletType, setPaletType] = useState(null);
+  const [paletType, setPaletType] = useState(null); // Esto es el tipo de contenido (seco, refrigerado, etc.)
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Estado para un mapa de productos para buscar sus nombres y tipos fácilmente
+  const [productsMap, setProductsMap] = useState({});
+
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchProducts = async () => {
       try {
         const productsCollectionRef = collection(db, "productos");
-        const qProducts = query(productsCollectionRef);
-        const querySnapshot = await getDocs(qProducts);
+        const q = query(productsCollectionRef);
+        const querySnapshot = await getDocs(q);
         const products = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setProductsList(products);
 
-        if (
-          paletId &&
-          initialPaletProducts &&
-          initialPaletProducts.length > 0
-        ) {
-          const productsWithUnits = initialPaletProducts.map((item) => {
-            const productData = products.find((p) => p.id === item.productId);
-            return {
-              ...item,
-              productName: productData?.name,
-              productType: productData?.type.toLowerCase(),
-              productUnit: productData?.unit.toLowerCase(),
-            };
-          });
-          setTempPaletProducts(productsWithUnits);
-          setPaletType(determinePaletType(productsWithUnits, products));
-        } else {
-          setPaletType(null);
-        }
+        // Crear un mapa de productos para fácil acceso
+        const pMap = {};
+        products.forEach((p) => {
+          pMap[p.id] = p;
+        });
+        setProductsMap(pMap);
       } catch (err) {
         console.error("Error al cargar la lista de productos:", err);
         setError("Error al cargar la lista de productos.");
@@ -74,130 +62,138 @@ function ManagePaletProductsModal({
         setLoading(false);
       }
     };
-    fetchInitialData();
-  }, [paletId, initialPaletProducts]);
+    fetchProducts();
+  }, []);
 
-  const filteredProducts = productsList.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleProductSelect = (product) => {
-    setSearchTerm(product.name);
-    setSelectedProduct(product.id);
-    setSelectedProductUnit(product.unit.toLowerCase());
-  };
-
-  const handleSearchTermChange = (e) => {
-    const newTerm = e.target.value;
-    setSearchTerm(newTerm);
-
-    if (selectedProduct) {
-      const currentSelectedProductData = productsList.find(
-        (p) => p.id === selectedProduct
-      );
-      if (
-        !currentSelectedProductData ||
-        !currentSelectedProductData.name
-          .toLowerCase()
-          .includes(newTerm.toLowerCase())
-      ) {
-        setSelectedProduct("");
-        setSelectedProductUnit("");
-        setQuantity("");
+  // Si estamos editando un palet existente, cargar su formatoPalet
+  useEffect(() => {
+    const fetchPaletFormat = async () => {
+      if (paletId) {
+        try {
+          const paletDocRef = doc(db, "palets", paletId);
+          const docSnap = await getDoc(paletDocRef);
+          if (docSnap.exists()) {
+            setFormatoPalet(docSnap.data().formatoPalet || "");
+          }
+        } catch (err) {
+          console.error("Error al cargar formatoPalet del palet:", err);
+        }
       }
+    };
+    fetchPaletFormat();
+  }, [paletId]);
+
+  // Recalcular el tipo de palet cada vez que cambia paletProducts o productsList
+  useEffect(() => {
+    if (productsList.length > 0) {
+      const currentPaletType = determinePaletType(paletProducts, productsList);
+      setPaletType(currentPaletType);
     }
-  };
+  }, [paletProducts, productsList]);
 
   const handleAddProductToPalet = (e) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
 
-    if (!selectedProduct || !quantity || parseFloat(quantity) <= 0) {
-      setError("Por favor, selecciona un producto y una cantidad válida.");
+    if (
+      !selectedProduct ||
+      !quantity ||
+      parseInt(quantity) <= 0 ||
+      !lote ||
+      !fechaCaducidad
+    ) {
+      setError(
+        "Por favor, selecciona un producto, una cantidad válida, el lote y la fecha de caducidad."
+      );
       return;
     }
 
-    const productToAdd = productsList.find((p) => p.id === selectedProduct);
+    const productToAdd = productsMap[selectedProduct];
     if (!productToAdd) {
       setError("Producto seleccionado no válido.");
       return;
     }
 
     const newProductType = productToAdd.type.toLowerCase();
-    const parsedQuantity =
-      productToAdd.unit.toLowerCase() === "peso"
-        ? parseFloat(quantity)
-        : parseInt(quantity);
 
-    let currentPaletType = paletType;
+    // Validar el tipo de producto con el tipo actual del palet
+    if (paletProducts.length > 0) {
+      const currentPaletMainType = determinePaletType(
+        paletProducts,
+        productsList
+      );
 
-    if (tempPaletProducts.length === 0) {
+      if (
+        newProductType !== "técnico" &&
+        currentPaletMainType !== "técnico" &&
+        newProductType !== currentPaletMainType
+      ) {
+        setError(
+          `Este palet es de tipo "${currentPaletMainType}". No puedes añadir productos de tipo "${newProductType}".`
+        );
+        return;
+      }
+      // Si el palet es técnico y se añade un producto no técnico, el tipo del palet cambiará.
+      // Esto se maneja automáticamente por el `determinePaletType` en el useEffect.
+      if (currentPaletMainType === "técnico" && newProductType !== "técnico") {
+        // Si el palet es técnico y se añade un producto no técnico,
+        // el tipo del palet se recalculará para ser el tipo del nuevo producto no técnico.
+        // No necesitamos un error aquí, solo una nota si es necesario.
+      }
+    } else {
+      // Si es el primer producto en el palet
       if (newProductType === "técnico") {
         setError(
           "El primer producto no puede ser de tipo 'técnico'. Un palet debe tener un tipo principal (seco, refrigerado, congelado)."
         );
         return;
       }
-      currentPaletType = newProductType;
-    } else {
-      if (newProductType === "técnico") {
-        if (currentPaletType === null || currentPaletType === "técnico") {
-          currentPaletType = "técnico";
-        }
-      } else if (currentPaletType === "técnico") {
-        currentPaletType = newProductType;
-      } else if (newProductType !== currentPaletType) {
-        setError(
-          `Este palet es de tipo "${currentPaletType}". No puedes añadir productos de tipo "${newProductType}".`
-        );
-        return;
-      }
     }
 
-    const existingProductIndex = tempPaletProducts.findIndex(
-      (item) => item.productId === selectedProduct
+    // Comprobar si el producto con el mismo lote ya está en el palet y actualizar la cantidad
+    const existingProductIndex = paletProducts.findIndex(
+      (item) => item.productId === selectedProduct && item.lote === lote
     );
-    let updatedProducts;
+
     if (existingProductIndex > -1) {
-      updatedProducts = [...tempPaletProducts];
-      updatedProducts[existingProductIndex].quantity += parsedQuantity;
+      const updatedPaletProducts = [...paletProducts];
+      updatedPaletProducts[existingProductIndex].quantity += parseInt(quantity);
+      setPaletProducts(updatedPaletProducts);
     } else {
-      updatedProducts = [
-        ...tempPaletProducts,
+      setPaletProducts([
+        ...paletProducts,
         {
           productId: selectedProduct,
           productName: productToAdd.name,
-          quantity: parsedQuantity,
+          quantity: parseInt(quantity),
           productType: newProductType,
-          productUnit: productToAdd.unit.toLowerCase(),
+          lote: lote,
+          fechaCaducidad: fechaCaducidad,
         },
-      ];
+      ]);
     }
-    setTempPaletProducts(updatedProducts);
-    setPaletType(currentPaletType);
+
+    // Limpiar campos después de añadir el producto al palet
     setSelectedProduct("");
-    setSelectedProductUnit("");
-    setSearchTerm("");
     setQuantity("");
+    setLote("");
+    setFechaCaducidad("");
   };
 
-  const handleRemoveProductFromPalet = (productIdToRemove) => {
-    const updatedPaletProducts = tempPaletProducts.filter(
-      (item) => item.productId !== productIdToRemove
+  const handleRemoveProductFromPalet = (productIdToRemove, loteToRemove) => {
+    const updatedPaletProducts = paletProducts.filter(
+      (item) =>
+        !(item.productId === productIdToRemove && item.lote === loteToRemove)
     );
-    setTempPaletProducts(updatedPaletProducts);
-    setPaletType(determinePaletType(updatedPaletProducts, productsList));
+    setPaletProducts(updatedPaletProducts);
   };
 
-  const handleSavePalet = async (e) => {
-    e.preventDefault();
+  const handleSavePalet = async () => {
     setError(null);
     setMessage(null);
 
-    if (tempPaletProducts.length === 0) {
+    if (paletProducts.length === 0) {
       setError("El palet debe contener al menos un producto.");
       return;
     }
@@ -207,115 +203,75 @@ function ManagePaletProductsModal({
       );
       return;
     }
-
-    try {
-      const currentUserUid = auth.currentUser
-        ? auth.currentUser.uid
-        : "anonymous";
-      const paletsCollectionRef = collection(db, "palets");
-
-      // Si es un palet existente (paletId está presente)
-      if (paletId) {
-        const paletDocRef = doc(db, "palets", paletId);
-        await updateDoc(paletDocRef, {
-          productosContenidos: tempPaletProducts.map((p) => ({
-            productId: p.productId,
-            quantity: p.quantity,
-          })),
-          tipoPalet: paletType,
-          updatedBy: currentUserUid,
-          updatedAt: new Date(),
-        });
-        setMessage("Palet actualizado exitosamente.");
-      } else {
-        // Si es un palet nuevo (paletId es null)
-        // 1. Calcular el número correlativo del palet para esta carga
-        const qPaletsForLoad = query(
-          paletsCollectionRef,
-          where("cargaId", "==", loadId)
-        );
-        const querySnapshot = await getDocs(qPaletsForLoad);
-        const existingPaletsCount = querySnapshot.docs.length;
-        const sequentialPaletNumber = existingPaletsCount + 1; // El siguiente número correlativo
-
-        // 2. Generar el numeroPalet técnico (ej. PAL-XXXXXX)
-        const formattedPaletNumber = `PAL-${Date.now().toString().slice(-6)}`;
-
-        // 3. Construir el nombre del palet con el formato deseado
-        const paletName = `${
-          associatedBoatName || "Barco Desconocido"
-        } - Palet ${sequentialPaletNumber}`;
-        console.log(
-          "ManagePaletProductsModal - Nombre final del palet:",
-          paletName
-        );
-        console.log(
-          "ManagePaletProductsModal - Número técnico de palet:",
-          formattedPaletNumber
-        );
-
-        await addDoc(paletsCollectionRef, {
-          cargaId: loadId,
-          nombre: paletName, // Usar el nombre del palet construido
-          numeroPalet: formattedPaletNumber, // Usar el número de palet generado en formato PAL-XXXXXX
-          productosContenidos: tempPaletProducts.map((p) => ({
-            productId: p.productId,
-            quantity: p.quantity,
-          })),
-          tipoPalet: paletType,
-          status: "en_almacen", // Estado inicial para nuevos palets
-          createdBy: currentUserUid,
-          createdAt: new Date(),
-          updatedBy: currentUserUid,
-          updatedAt: new Date(),
-        });
-        setMessage("Nuevo palet creado exitosamente.");
-      }
-
-      onPaletUpdated();
-      onClose();
-    } catch (err) {
-      console.error(
-        "Error inesperado al guardar palet desde el componente:",
-        err
+    if (!formatoPalet) {
+      // Validar el nuevo campo formatoPalet
+      setError(
+        "Por favor, selecciona el formato del palet (Europeo, Americano, Otros)."
       );
-      setError("Ocurrió un error inesperado al guardar el palet.");
+      return;
+    }
+
+    const currentUserUid = auth.currentUser
+      ? auth.currentUser.uid
+      : "anonymous";
+
+    const result = await savePalet({
+      paletId: paletId, // Será null si es un nuevo palet
+      loadId: loadId,
+      productosContenidos: paletProducts.map((p) => ({
+        productId: p.productId,
+        quantity: p.quantity,
+        lote: p.lote,
+        fechaCaducidad: p.fechaCaducidad,
+      })),
+      tipoPalet: paletType, // Este es el tipo de contenido (seco, refrigerado, etc.)
+      formatoPalet: formatoPalet, // <-- Nuevo campo: formato del palet
+      currentUserUid: currentUserUid,
+      db: db,
+    });
+
+    if (result.success) {
+      setMessage(result.message);
+      onPaletUpdated(); // Notifica al componente padre que se añadió/actualizó un palet
+      setTimeout(() => onClose(), 1500); // Cierra el modal después de un breve mensaje
+    } else {
+      setError(result.error);
     }
   };
 
   if (loading) {
-    return <p>Cargando productos...</p>;
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <p>Cargando productos...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3>{paletId ? "Editar Productos del Palet" : "Añadir Nuevo Palet"}</h3>
+        <h3>
+          {paletId ? "Editar Palet" : "Añadir Nuevo Palet"} a Carga:{" "}
+          {associatedLoadName} ({associatedBoatName})
+        </h3>
+
         <form onSubmit={handleAddProductToPalet}>
           <div className="form-group">
-            <label htmlFor="product-search">Buscar Producto:</label>
-            <input
-              type="text"
-              id="product-search"
-              placeholder="Escribe para buscar productos..."
-              value={searchTerm}
-              onChange={handleSearchTermChange}
-            />
-            {searchTerm && filteredProducts.length > 0 && (
-              <ul className="product-suggestions-list">
-                {filteredProducts.slice(0, 10).map((product) => (
-                  <li
-                    key={product.id}
-                    onClick={() => handleProductSelect(product)}
-                  >
-                    {product.name} ({product.type})
-                  </li>
-                ))}
-              </ul>
-            )}
-            {searchTerm && filteredProducts.length === 0 && (
-              <p className="no-suggestions">No se encontraron productos.</p>
-            )}
+            <label htmlFor="product-select">Producto:</label>
+            <select
+              id="product-select"
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+            >
+              <option value="">Selecciona un producto</option>
+              {productsList.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} ({product.type})
+                </option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <label htmlFor="quantity">Cantidad:</label>
@@ -323,49 +279,53 @@ function ManagePaletProductsModal({
               type="number"
               id="quantity"
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || "")}
               min="1"
-              step={selectedProductUnit === "peso" ? "0.01" : "1"}
-              disabled={!selectedProduct}
-              placeholder={
-                !selectedProduct
-                  ? "Selecciona un producto primero"
-                  : "Introduce la cantidad"
-              }
             />
           </div>
-          <button
-            type="submit"
-            className="add-product-to-palet-button"
-            disabled={!selectedProduct}
-            style={{ padding: "8px 15px", fontSize: "0.9em" }} // Ajuste de tamaño
-          >
+          <div className="form-group">
+            <label htmlFor="lote">Lote:</label>
+            <input
+              type="text"
+              id="lote"
+              value={lote}
+              onChange={(e) => setLote(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="fecha-caducidad">Fecha de Caducidad:</label>
+            <input
+              type="date"
+              id="fecha-caducidad"
+              value={fechaCaducidad}
+              onChange={(e) => setFechaCaducidad(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="add-product-to-palet-button">
             Añadir Producto al Palet
           </button>
         </form>
 
-        {tempPaletProducts.length > 0 && (
+        {paletProducts.length > 0 && (
           <div className="palet-products-preview">
             <h4>
               Productos en este Palet (
               {paletType ? `Tipo: ${paletType}` : "Tipo no definido"})
             </h4>
             <ul>
-              {tempPaletProducts.map((item, index) => (
+              {paletProducts.map((item, index) => (
                 <li key={index}>
-                  {item.productName ||
-                    productsList.find((p) => p.id === item.productId)?.name}
-                  : {item.quantity}{" "}
-                  {item.productUnit === "peso" ? "Kg" : "unidades"}
+                  {item.productName} (
+                  {productsMap[item.productId]?.type || "N/A"}): {item.quantity}{" "}
+                  unidades, Lote: {item.lote}, Caducidad: {item.fechaCaducidad}
                   <button
                     type="button"
-                    onClick={() => handleRemoveProductFromPalet(item.productId)}
+                    onClick={() =>
+                      handleRemoveProductFromPalet(item.productId, item.lote)
+                    }
                     className="remove-product-button"
-                    style={{
-                      padding: "3px 8px",
-                      fontSize: "0.7em",
-                      marginLeft: "10px",
-                    }} // Ajuste de tamaño
                   >
                     X
                   </button>
@@ -375,25 +335,35 @@ function ManagePaletProductsModal({
           </div>
         )}
 
+        <div className="form-group">
+          {" "}
+          {/* Nuevo campo para el formato del palet */}
+          <label htmlFor="formato-palet">Formato del Palet:</label>
+          <select
+            id="formato-palet"
+            value={formatoPalet}
+            onChange={(e) => setFormatoPalet(e.target.value)}
+            required
+          >
+            <option value="">Selecciona un formato</option>
+            <option value="Europeo">Europeo</option>
+            <option value="Americano">Americano</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+
         <div className="modal-actions">
           <button
             type="button"
             onClick={handleSavePalet}
             className="auth-button"
-            style={{ padding: "10px 20px", fontSize: "1em" }} // Ajuste de tamaño
+            disabled={paletProducts.length === 0}
           >
-            {paletId ? "Guardar Cambios" : "Crear Palet"}
+            {" "}
+            {/* Deshabilitado si no hay productos */}
+            {paletId ? "Guardar Cambios del Palet" : "Crear Palet"}
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="cancel-button"
-            style={{
-              padding: "10px 20px",
-              fontSize: "1em",
-              marginLeft: "10px",
-            }} // Ajuste de tamaño
-          >
+          <button type="button" onClick={onClose} className="cancel-button">
             Cancelar
           </button>
         </div>

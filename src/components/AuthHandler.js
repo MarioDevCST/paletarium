@@ -179,7 +179,8 @@ function AuthHandler() {
                   userRole={userProfile?.role}
                   requiredRole="admin"
                 >
-                  <AdminPanel />
+                  <AdminPanel userRole={userProfile?.role} />{" "}
+                  {/* <-- userRole pasado a AdminPanel */}
                 </ProtectedRoute>
               }
             />

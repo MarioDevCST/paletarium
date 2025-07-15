@@ -530,8 +530,9 @@ code {
 .add-item-form-container .form-group input[type="text"],
 .add-item-form-container .form-group input[type="number"],
 .add-item-form-container .form-group select,
-.add-item-form-container .form-group textarea {
-  /* Añadido textarea */
+.add-item-form-container .form-group textarea,
+.modal-content .form-group input[type="date"] {
+  /* Añadido input[type="date"] */
   width: calc(100% - 20px);
   padding: 10px;
   border: 1px solid #ccc;
@@ -699,8 +700,8 @@ code {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-left: 8px solid transparent; /* Borde izquierdo para el color dinámico */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .load-card:hover {
@@ -768,9 +769,9 @@ code {
   background-color: #f8f8f8;
   border-top: 1px solid #eee;
   text-align: center;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
+  display: flex; /* Para alinear botones */
+  justify-content: center; /* Centrar botones */
+  gap: 10px; /* Espacio entre botones */
 }
 
 .card-actions .modify-button {
@@ -857,76 +858,21 @@ code {
   box-sizing: border-box;
 }
 
-/* --- NUEVOS ESTILOS PARA BOTONES EN MODALES (ManagePaletProductsModal.js) --- */
 .add-product-to-palet-button {
-  padding: 8px 15px;
-  font-size: 0.9em;
+  padding: 10px 15px;
   background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
+  font-size: 0.9em;
   transition: background-color 0.3s ease;
-  margin-top: 10px; /* Añadido para separación */
-  width: 100%; /* Ocupa todo el ancho disponible */
+  margin-top: 10px;
+  width: 100%;
 }
 
 .add-product-to-palet-button:hover {
   background-color: #0056b3;
-}
-
-.remove-product-button {
-  padding: 3px 8px;
-  font-size: 0.7em;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px; /* Cambiado a 4px para consistencia, antes era 50% */
-  cursor: pointer;
-  margin-left: 10px;
-  transition: background-color 0.3s ease;
-  /* Asegurar que sea un círculo si se desea, o un cuadrado redondeado */
-  width: 24px; /* Tamaño fijo para el botón 'X' */
-  height: 24px; /* Tamaño fijo para el botón 'X' */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.remove-product-button:hover {
-  background-color: #c82333;
-}
-
-/* Estilos para los botones principales (Guardar/Crear y Cancelar) */
-.auth-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.auth-button:hover {
-  background-color: #218838;
-}
-
-.cancel-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  margin-left: 10px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.cancel-button:hover {
-  background-color: #5a6268;
 }
 
 .palet-products-preview {
@@ -963,6 +909,25 @@ code {
 
 .palet-products-preview li:last-child {
   border-bottom: none;
+}
+
+.remove-product-button {
+  background-color: #dc3544;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.7em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.remove-product-button:hover {
+  background-color: #c82333;
 }
 
 .modal-actions {
@@ -1178,6 +1143,11 @@ code {
   border-left-color: #d2b4de; /* Técnico */
 }
 
+/* NUEVO: Borde negro para palets no Europeos */
+.palet-card-non-europeo {
+  border: 2px solid black; /* Borde negro de 2px */
+}
+
 .palet-card-header {
   padding: 10px 15px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Borde más sutil */
@@ -1276,31 +1246,6 @@ code {
   margin-top: 10px;
   border-top: 1px solid #f0f0f0;
   padding-top: 8px;
-}
-
-/* --- ESTILOS ESPECÍFICOS PARA LOS BOTONES DENTRO DE PALET-CARD --- */
-.palet-card .card-actions .modify-button,
-.palet-card .card-actions .delete-button {
-  padding: 6px 12px; /* Reducir padding */
-  font-size: 0.8em; /* Reducir tamaño de fuente */
-  border-radius: 4px; /* Asegurar bordes redondeados */
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.palet-card .card-actions .modify-button:hover,
-.palet-card .card-actions .delete-button:hover {
-  transform: translateY(-1px);
-}
-
-.palet-card .card-actions .delete-button {
-  margin-left: 8px; /* Ajustar el margen entre botones */
-  background-color: #dc3545; /* Color para el botón de eliminar */
-  color: white;
-  border: none;
-}
-
-.palet-card .card-actions .delete-button:hover {
-  background-color: #c82333;
 }
 
 /* --- ESTILOS PARA LOADPALETSELECTIONPAGE --- */
@@ -1425,4 +1370,45 @@ code {
 .selection-actions {
   margin-top: 30px;
   text-align: center;
+}
+
+/* --- ESTILOS PARA LOS BOTONES DE EDITAR/BORRAR DENTRO DE PALET CARD --- */
+.palet-card-actions {
+  padding: 10px 15px; /* Menos padding que el card-actions general */
+  background-color: #f0f0f0; /* Un fondo más claro para diferenciar */
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  gap: 8px; /* Espacio entre los botones */
+  margin-top: auto; /* Empuja los botones hacia abajo en la tarjeta */
+}
+
+.palet-card-actions .modify-button,
+.palet-card-actions .delete-button {
+  padding: 6px 12px; /* Más pequeños */
+  font-size: 0.8em; /* Fuente más pequeña */
+  border-radius: 4px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.palet-card-actions .modify-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.palet-card-actions .modify-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.palet-card-actions .delete-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.palet-card-actions .delete-button:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
 }

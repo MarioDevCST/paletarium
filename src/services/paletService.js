@@ -15,8 +15,9 @@ import {
  * @param {object} options - Opciones para guardar el palet.
  * @param {string} [options.paletId] - ID del palet si se está actualizando uno existente.
  * @param {string} options.loadId - ID de la carga a la que pertenece el palet.
- * @param {Array<object>} options.productosContenidos - Array de objetos { productId, quantity } del palet.
+ * @param {Array<object>} options.productosContenidos - Array de objetos { productId, quantity, lote, fechaCaducidad } del palet.
  * @param {string} options.tipoPalet - Tipo de palet ('seco', 'refrigerado', 'congelado', 'técnico').
+ * @param {string} options.formatoPalet - Formato del palet ('Europeo', 'Americano', 'Otros').
  * @param {string} options.currentUserUid - UID del usuario actual que realiza la operación.
  * @param {object} options.db - Instancia de Firestore.
  * @returns {Promise<object>} Objeto con { success: true, message: string } o { success: false, error: string }.
@@ -26,6 +27,7 @@ export const savePalet = async ({
   loadId,
   productosContenidos,
   tipoPalet,
+  formatoPalet,
   currentUserUid,
   db,
 }) => {
@@ -36,6 +38,7 @@ export const savePalet = async ({
       await updateDoc(paletDocRef, {
         productosContenidos: productosContenidos,
         tipoPalet: tipoPalet,
+        formatoPalet: formatoPalet, // <-- Añadido al actualizar
         updatedBy: currentUserUid,
         updatedAt: new Date(),
       });
@@ -69,6 +72,7 @@ export const savePalet = async ({
         nombre: paletName,
         numeroPalet: numeroPalet,
         tipoPalet: tipoPalet,
+        formatoPalet: formatoPalet, // <-- Añadido al crear
         cargaId: loadId,
         productosContenidos: productosContenidos,
         createdBy: currentUserUid,

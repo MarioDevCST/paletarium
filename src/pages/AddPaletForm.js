@@ -14,8 +14,10 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
   const [productsList, setProductsList] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [lote, setLote] = useState(""); // Nuevo estado para el Lote
+  const [fechaCaducidad, setFechaCaducidad] = useState(""); // Nuevo estado para la Fecha de caducidad
   const [paletProducts, setPaletProducts] = useState([]); // Productos que se añadirán a este palet
-  const [paletType, setPaletType] = useState(null); // 'seco', 'refrigerado', 'congelado'
+  const [paletType, setPaletType] = useState(null); // 'seco', 'refrigerado', 'congelado', 'técnico'
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,8 +53,17 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
     setError(null);
     setMessage(null);
 
-    if (!selectedProduct || !quantity || quantity <= 0) {
-      setError("Por favor, selecciona un producto y una cantidad válida.");
+    if (
+      !selectedProduct ||
+      !quantity ||
+      quantity <= 0 ||
+      !lote ||
+      !fechaCaducidad
+    ) {
+      // Añadida validación para lote y fechaCaducidad
+      setError(
+        "Por favor, selecciona un producto, una cantidad válida, el lote y la fecha de caducidad."
+      );
       return;
     }
 
@@ -62,7 +73,7 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
       return;
     }
 
-    const newProductType = productToAdd.type;
+    const newProductType = productToAdd.type.toLowerCase(); // Convertir a minúsculas
 
     // Lógica de validación del tipo de palet
     if (paletProducts.length === 0) {
@@ -77,8 +88,17 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
     } else {
       // Si ya hay productos, valida que el nuevo producto sea compatible
       if (newProductType === "técnico") {
-        // Los productos técnicos son compatibles con cualquier tipo de palet
+        // Los productos técnicos son compatibles con cualquier tipo de palet.
+        // Si el palet aún no tiene un tipo definido (solo productos técnicos hasta ahora),
+        // o si el tipo actual es 'técnico', se mantiene o se establece a 'técnico'.
+        if (paletType === null || paletType === "técnico") {
+          setPaletType("técnico");
+        }
+      } else if (paletType === "técnico") {
+        // Si el palet era 'técnico' y se añade un producto no técnico, el tipo cambia.
+        setPaletType(newProductType);
       } else if (newProductType !== paletType) {
+        // Si el tipo del nuevo producto no coincide con el tipo actual del palet (y el palet no es técnico)
         setError(
           `Este palet es de tipo "${paletType}". No puedes añadir productos de tipo "${newProductType}".`
         );
@@ -86,49 +106,58 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
       }
     }
 
-    // Comprobar si el producto ya está en el palet y actualizar la cantidad
+    // Comprobar si el producto con el mismo lote ya está en el palet y actualizar la cantidad
     const existingProductIndex = paletProducts.findIndex(
-      (item) => item.productId === selectedProduct
+      (item) => item.productId === selectedProduct && item.lote === lote
     );
     if (existingProductIndex > -1) {
       const updatedPaletProducts = [...paletProducts];
+      // Si el lote es el mismo, solo actualiza la cantidad
       updatedPaletProducts[existingProductIndex].quantity += parseInt(quantity);
       setPaletProducts(updatedPaletProducts);
     } else {
+      // Si no existe o el lote es diferente, añade un nuevo elemento
       setPaletProducts([
         ...paletProducts,
         {
           productId: selectedProduct,
           productName: productToAdd.name, // Añadir nombre para mostrar en la lista
           quantity: parseInt(quantity),
-          productType: newProductType, // Añadir tipo para referencia
+          productType: newProductType, // Añadir tipo para referencia (ya en minúsculas)
+          lote: lote, // Guardar el lote
+          fechaCaducidad: fechaCaducidad, // Guardar la fecha de caducidad
         },
       ]);
     }
 
+    // Limpiar campos después de añadir el producto al palet
     setSelectedProduct("");
     setQuantity("");
+    setLote("");
+    setFechaCaducidad("");
   };
 
-  const handleRemoveProductFromPalet = (productIdToRemove) => {
+  const handleRemoveProductFromPalet = (productIdToRemove, loteToRemove) => {
     const updatedPaletProducts = paletProducts.filter(
-      (item) => item.productId !== productIdToRemove
+      (item) =>
+        !(item.productId === productIdToRemove && item.lote === loteToRemove)
     );
     setPaletProducts(updatedPaletProducts);
 
-    // Si no quedan productos, restablece el tipo de palet
+    // Si no quedan productos, restablece el tipo de palet a null
     if (updatedPaletProducts.length === 0) {
       setPaletType(null);
     } else {
-      // Si quedan productos, recalcula el tipo de palet si el eliminado era el que lo definía
+      // Si quedan productos, recalcula el tipo de palet
       const remainingNonTechnicalProducts = updatedPaletProducts.filter(
         (p) => p.productType !== "técnico"
       );
       if (remainingNonTechnicalProducts.length > 0) {
+        // Si hay productos no técnicos, el tipo de palet es el del primer producto no técnico
         setPaletType(remainingNonTechnicalProducts[0].productType);
       } else {
-        // Si solo quedan productos técnicos, el palet pierde su tipo principal
-        setPaletType(null);
+        // Si solo quedan productos técnicos, el palet es de tipo 'técnico'
+        setPaletType("técnico");
       }
     }
   };
@@ -144,7 +173,7 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
     }
     if (!paletType) {
       setError(
-        "El palet debe tener un tipo definido (seco, refrigerado o congelado) a partir de sus productos."
+        "El palet debe tener un tipo definido (seco, refrigerado, congelado o técnico) a partir de sus productos."
       );
       return;
     }
@@ -180,12 +209,14 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
       await addDoc(paletsCollectionRef, {
         nombre: paletName,
         numeroPalet: numeroPalet,
-        tipoPalet: paletType,
+        tipoPalet: paletType, // Ya está en minúsculas
         cargaId: loadId,
         productosContenidos: paletProducts.map((p) => ({
           productId: p.productId,
           quantity: p.quantity,
-        })), // Solo guardar ID y cantidad
+          lote: p.lote, // Guardar el lote
+          fechaCaducidad: p.fechaCaducidad, // Guardar la fecha de caducidad
+        })), // Guardar todos los datos necesarios
         createdBy: currentUserUid,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -196,6 +227,8 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
       setPaletType(null);
       setSelectedProduct("");
       setQuantity("");
+      setLote("");
+      setFechaCaducidad("");
       onPaletAdded(); // Notifica al componente padre que se añadió un palet
       onClose(); // Cierra el modal
     } catch (err) {
@@ -240,6 +273,30 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
               min="1"
             />
           </div>
+          <div className="form-group">
+            {" "}
+            {/* Nuevo campo para Lote */}
+            <label htmlFor="lote">Lote:</label>
+            <input
+              type="text"
+              id="lote"
+              value={lote}
+              onChange={(e) => setLote(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            {" "}
+            {/* Nuevo campo para Fecha de Caducidad */}
+            <label htmlFor="fecha-caducidad">Fecha de Caducidad:</label>
+            <input
+              type="date" // Usamos type="date" para un selector de fecha
+              id="fecha-caducidad"
+              value={fechaCaducidad}
+              onChange={(e) => setFechaCaducidad(e.target.value)}
+              required
+            />
+          </div>
           <button type="submit" className="add-product-to-palet-button">
             Añadir Producto al Palet
           </button>{" "}
@@ -256,10 +313,12 @@ function AddPaletForm({ loadId, onClose, onPaletAdded }) {
               {paletProducts.map((item, index) => (
                 <li key={index}>
                   {item.productName} ({item.productType}): {item.quantity}{" "}
-                  unidades
+                  unidades, Lote: {item.lote}, Caducidad: {item.fechaCaducidad}
                   <button
                     type="button"
-                    onClick={() => handleRemoveProductFromPalet(item.productId)}
+                    onClick={() =>
+                      handleRemoveProductFromPalet(item.productId, item.lote)
+                    }
                     className="remove-product-button"
                   >
                     X

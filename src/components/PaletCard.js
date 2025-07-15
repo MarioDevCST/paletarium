@@ -1,23 +1,28 @@
 import React from "react";
 
+// Añadido formatoPalet a las props
 function PaletCard({
   palet,
   getProductName,
   getUserDisplayName,
   formatDate,
   onViewDetails,
+  formatoPalet,
 }) {
-  // Determina el tipo de palet para aplicar los estilos de color
-  // Se asume que palet.tipoPalet ya viene en minúsculas y es correcto.
-  // Si no, se podría añadir .toLowerCase() aquí.
-  const actualPaletType = palet.tipoPalet || "seco"; // Fallback si tipoPalet no está definido
+  const actualPaletType = palet.tipoPalet || "seco";
+
+  // Determina si el palet no es Europeo para aplicar el borde negro
+  const isNonEuropeo = formatoPalet && formatoPalet.toLowerCase() !== "europeo";
 
   return (
     <div
       key={palet.id}
-      className={`palet-card palet-card-type-${actualPaletType.toLowerCase()}`}
-      onClick={() => onViewDetails(palet)} // <-- Añadido el onClick para ver detalles
-      style={{ cursor: "pointer" }} // Indicar que la tarjeta es clickeable
+      // Añade la clase condicional para el borde negro
+      className={`palet-card palet-card-type-${actualPaletType.toLowerCase()} ${
+        isNonEuropeo ? "palet-card-non-europeo" : ""
+      }`}
+      onClick={() => onViewDetails(palet)}
+      style={{ cursor: "pointer" }}
     >
       <div
         className={`palet-card-header palet-header-type-${actualPaletType.toLowerCase()}`}
@@ -32,16 +37,10 @@ function PaletCard({
           <strong>Número de Palet:</strong> {palet.numeroPalet}
         </p>
         <p>
-          <strong>Productos:</strong>
-        </p>
-        <ul>
-          {palet.productosContenidos &&
-            palet.productosContenidos.map((prod, idx) => (
-              <li key={idx}>
-                {getProductName(prod.productId)}: {prod.quantity} unidades
-              </li>
-            ))}
-        </ul>
+          <strong>Formato:</strong> {formatoPalet || "N/A"}
+        </p>{" "}
+        {/* Muestra el formato del palet */}
+        {/* Se ha eliminado la lista de productos de aquí para mostrarla solo en el detalle */}
         <p className="palet-card-meta">
           Creado por: {getUserDisplayName(palet.createdBy)} el{" "}
           {formatDate(palet.createdAt)}

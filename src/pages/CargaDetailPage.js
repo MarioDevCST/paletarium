@@ -14,6 +14,7 @@ import {
 
 import ManagePaletProductsModal from "../components/ManagePaletProductsModal";
 import PaletViewModal from "../components/PaletViewModal"; // Importa el PaletViewModal
+import PaletCard from "../components/PaletCard"; // Asegúrate de importar PaletCard
 
 function CargaDetailPage({ userRole }) {
   const { loadId } = useParams();
@@ -358,61 +359,34 @@ function CargaDetailPage({ userRole }) {
       ) : (
         <div className="palets-list-container">
           {palets.map((palet) => (
-            <div
-              key={palet.id}
-              className={`palet-card palet-card-type-${palet.tipoPalet}`}
-              onClick={() => handleOpenPaletViewModal(palet)}
-            >
-              <div
-                className={`palet-card-header palet-header-type-${palet.tipoPalet}`}
-              >
-                <h5>{palet.nombre}</h5>
-                <span className={`palet-type-${palet.tipoPalet}`}>
-                  {palet.tipoPalet}
-                </span>
-              </div>
-              <div className="palet-card-body">
-                <p>
-                  <strong>Número de Palet:</strong> {palet.numeroPalet}
-                </p>
-                <p>
-                  <strong>Estado:</strong> {palet.status || "N/A"}
-                </p>
-                {/* Listado de productos asociados al palet */}
-                {palet.productosContenidos &&
-                palet.productosContenidos.length > 0 ? (
-                  <div className="palet-products-list">
-                    <h6>Productos:</h6>
-                    <ul>
-                      {palet.productosContenidos.map((item, idx) => (
-                        <li key={idx}>
-                          {getProductName(item.productId)}: {item.quantity}{" "}
-                          {getProductUnit(item.productId) === "peso"
-                            ? "Kg"
-                            : "unidades"}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <p>Este palet no contiene productos.</p>
-                )}
-              </div>
-              <div className="card-actions">
+            <div key={palet.id}>
+              {" "}
+              {/* Contenedor para la tarjeta y los botones */}
+              <PaletCard
+                palet={palet}
+                getProductName={getProductName}
+                getUserDisplayName={getUserDisplayName}
+                formatDate={formatDate}
+                onViewDetails={handleOpenPaletViewModal}
+                formatoPalet={palet.formatoPalet}
+              />
+              <div className="palet-card-actions">
+                {" "}
+                {/* Nuevo div para los botones de la tarjeta de palet */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenManagePaletModal(palet);
                   }}
-                  className="modify-button"
+                  className="modify-button small-button"
                 >
+                  {" "}
+                  {/* Añadida clase small-button */}
                   Editar Palet
                 </button>
-                {/* Botón de Borrar Palet */}
                 <button
                   onClick={(e) => handleDeletePalet(e, palet.id, palet.nombre)}
-                  className="delete-button"
-                  style={{ marginLeft: "10px" }}
+                  className="delete-button small-button" // Añadida clase small-button
                 >
                   Borrar Palet
                 </button>
