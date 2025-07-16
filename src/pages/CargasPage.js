@@ -9,11 +9,21 @@ import {
   updateDoc,
   deleteDoc,
   where,
-} from "firebase/firestore";
+} from "firebase/firestore"; // Importa 'where'
 import { useNavigate } from "react-router-dom";
 // import AddPaletForm from './AddPaletForm'; // Ya no se importa aquí
 
-function CargasPage({ userRole }) {
+function CargasPage({ userProfile }) {
+  // <-- Ahora recibe userProfile completo
+  const userRole = userProfile?.role; // Deriva userRole de userProfile
+  const isAdminUser = userProfile?.role === "admin"; // Deriva isAdminUser de userProfile
+
+  // --- DEBUGGING LOG ---
+  console.log("CargasPage - userProfile recibido:", userProfile); // Nuevo log para el objeto completo
+  console.log("CargasPage - userRole derivado:", userRole);
+  console.log("CargasPage - isAdminUser derivado:", isAdminUser);
+  // --- FIN DEBUGGING LOG ---
+
   const [loads, setLoads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,24 +31,23 @@ function CargasPage({ userRole }) {
   const [sortBy, setSortBy] = useState("loadDate"); // Ordenar por fecha de carga por defecto
   const navigate = useNavigate();
 
-  // Estados para el formulario de añadir carga
+  // Estados para el formulario de añadir carga (si aplica, lo mantengo simplificado)
+  const [newLoadName, setNewLoadName] = useState("");
+  const [addLoadMessage, setAddLoadMessage] = useState(null);
+  const [addLoadError, setAddLoadError] = useState(null);
+  const [showAddLoadForm, setShowAddLoadForm] = useState(false);
+
+  // Estados para almacenar barcos y choferes para los desplegables
+  const [boatsList, setBoatsList] = useState([]);
+  const [driversList, setDriversList] = useState([]);
+  const [allUsersMap, setAllUsersMap] = useState({}); // Mapa para userId -> {nombre, email}
+
+  // Nuevos estados para los campos del formulario de añadir carga
   const [newLoadDate, setNewLoadDate] = useState("");
   const [newUnloadDate, setNewUnloadDate] = useState("");
   const [newAssociatedBoatId, setNewAssociatedBoatId] = useState("");
   const [newDriverId, setNewDriverId] = useState("");
   const [newStatus, setNewStatus] = useState("pending"); // Nuevo estado para el status, por defecto 'pending'
-  const [addLoadMessage, setAddLoadMessage] = useState(null);
-  const [addLoadError, setAddLoadError] = useState(null);
-  const [showAddLoadForm, setShowAddLoadForm] = useState(false);
-
-  // Estados para el modal de añadir palet (ELIMINADOS DE AQUÍ)
-  // const [showAddPaletModal, setShowAddPaletModal] = useState(false);
-  // const [selectedLoadForPalet, setSelectedLoadForPalet] = useState(null);
-
-  // Estados para almacenar datos de desplegables
-  const [boatsList, setBoatsList] = useState([]);
-  const [driversList, setDriversList] = useState([]);
-  const [allUsersMap, setAllUsersMap] = useState({}); // Mapa para userId -> {nombre, email}
 
   // Opciones para el desplegable de estado
   const statusOptions = ["pending", "completed", "in_transit", "cancelled"]; // Puedes ajustar estos estados
@@ -96,8 +105,8 @@ function CargasPage({ userRole }) {
       const loadsCollectionRef = collection(db, "cargas");
       let q = query(loadsCollectionRef);
 
-      // Si el usuario es 'mozo_almacen', solo mostrar cargas con status 'pending'
-      if (userRole === "mozo_almacen") {
+      // Si el usuario es 'mozo_almacen' o 'chofer', solo mostrar cargas con status 'pending'
+      if (userRole === "mozo_almacen" || userRole === "chofer") {
         q = query(loadsCollectionRef, where("status", "==", "pending"));
       }
 
@@ -168,7 +177,7 @@ function CargasPage({ userRole }) {
         unloadDate: newUnloadDate ? new Date(newUnloadDate) : null,
         associatedBoatId: newAssociatedBoatId,
         driverId: newDriverId,
-        status: newStatus, // Guarda el nuevo campo status
+        status: "pending", // Estado inicial de la carga
         createdBy: currentUserUid,
         updatedBy: currentUserUid, // Al crear, es el mismo que createdBy
         createdAt: new Date(),
@@ -184,7 +193,7 @@ function CargasPage({ userRole }) {
       fetchLoads();
     } catch (err) {
       console.error("Error al añadir carga:", err);
-      setAddLoadError("Error al añadir el carga. Revisa los permisos.");
+      setAddLoadError("Error al añadir la carga. Revisa los permisos.");
     }
   };
 
@@ -296,10 +305,7 @@ function CargasPage({ userRole }) {
 
   // Manejador para ir a la página de detalles de la carga
   const handleViewLoadDetails = (loadId) => {
-    console.log(
-      `CargasPage: Navegando a detalles de carga con ID: /cargas/${loadId}/details`
-    ); // <-- Log de depuración
-    navigate(`/cargas/${loadId}/details`);
+    navigate(`/cargas/detail/${loadId}`); // Corregido: usar /cargas/detail/:loadId
   };
 
   if (loading) {
@@ -334,11 +340,10 @@ function CargasPage({ userRole }) {
           <option value="driverId">Ordenar por Chofer</option>
           <option value="status">Ordenar por Estado</option>
           <option value="createdBy">Ordenar por Creador</option>
-          <option value="createdAt">Ordenar por Fecha Creación</option>
           <option value="updatedAt">Ordenar por Fecha Modificación</option>
         </select>
         {/* El botón de crear nueva carga solo para administradores */}
-        {userRole === "admin" && (
+        {isAdminUser && ( // <-- Usa la nueva prop isAdminUser aquí
           <button
             onClick={() => setShowAddLoadForm(!showAddLoadForm)}
             className="create-new-item-button"
@@ -349,107 +354,112 @@ function CargasPage({ userRole }) {
       </div>
 
       {/* Formulario para añadir nueva carga (renderizado condicionalmente para admins) */}
-      {showAddLoadForm && userRole === "admin" && (
-        <div className="add-item-form-container">
-          <h4>Añadir Nueva Carga</h4>
-          <form onSubmit={handleAddLoad}>
-            <div className="form-group">
-              <label htmlFor="load-name">Nombre de la Carga:</label>
-              <input
-                type="text"
-                id="load-name"
-                value={
-                  newLoadDate && newAssociatedBoatId
-                    ? `${getBoatName(newAssociatedBoatId)} - ${new Date(
-                        newLoadDate
-                      ).toLocaleDateString("es-ES")}`
-                    : ""
-                }
-                readOnly
-                disabled
-                placeholder="Se generará automáticamente"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="load-date">Fecha de Carga:</label>
-              <input
-                type="datetime-local"
-                id="load-date"
-                value={newLoadDate}
-                onChange={(e) => setNewLoadDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="unload-date">Fecha de Descarga (opcional):</label>
-              <input
-                type="datetime-local"
-                id="unload-date"
-                value={newUnloadDate}
-                onChange={(e) => setNewUnloadDate(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="associated-boat">Barco Asociado:</label>
-              <select
-                id="associated-boat"
-                value={newAssociatedBoatId}
-                onChange={(e) => setNewAssociatedBoatId(e.target.value)}
-                required
-              >
-                <option value="">Selecciona un barco</option>
-                {boatsList.map((boat) => (
-                  <option key={boat.id} value={boat.id}>
-                    {boat.name} ({boat.type})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="driver">Chofer:</label>
-              <select
-                id="driver"
-                value={newDriverId}
-                onChange={(e) => setNewDriverId(e.target.value)}
-                required
-              >
-                <option value="">Selecciona un chofer</option>
-                {driversList.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nombre || user.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="load-status">Estado de la Carga:</label>
-              <select
-                id="load-status"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                required
-              >
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="auth-button">
-              Añadir Carga
-            </button>
-          </form>
-          {addLoadMessage && (
-            <p className="auth-message success">{addLoadMessage}</p>
-          )}
-          {addLoadError && <p className="auth-message error">{addLoadError}</p>}
-        </div>
-      )}
+      {showAddLoadForm &&
+        isAdminUser && ( // <-- Usa la nueva prop isAdminUser aquí
+          <div className="add-item-form-container">
+            <h4>Añadir Nueva Carga</h4>
+            <form onSubmit={handleAddLoad}>
+              <div className="form-group">
+                <label htmlFor="load-name">Nombre de la Carga:</label>
+                <input
+                  type="text"
+                  id="load-name"
+                  value={
+                    newLoadDate && newAssociatedBoatId
+                      ? `${getBoatName(newAssociatedBoatId)} - ${new Date(
+                          newLoadDate
+                        ).toLocaleDateString("es-ES")}`
+                      : ""
+                  }
+                  readOnly
+                  disabled
+                  placeholder="Se generará automáticamente"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="load-date">Fecha de Carga:</label>
+                <input
+                  type="datetime-local"
+                  id="load-date"
+                  value={newLoadDate}
+                  onChange={(e) => setNewLoadDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="unload-date">
+                  Fecha de Descarga (opcional):
+                </label>
+                <input
+                  type="datetime-local"
+                  id="unload-date"
+                  value={newUnloadDate}
+                  onChange={(e) => setNewUnloadDate(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="associated-boat">Barco Asociado:</label>
+                <select
+                  id="associated-boat"
+                  value={newAssociatedBoatId}
+                  onChange={(e) => setNewAssociatedBoatId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona un barco</option>
+                  {boatsList.map((boat) => (
+                    <option key={boat.id} value={boat.id}>
+                      {boat.name} ({boat.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="driver">Chofer:</label>
+                <select
+                  id="driver"
+                  value={newDriverId}
+                  onChange={(e) => setNewDriverId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona un chofer</option>
+                  {driversList.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.nombre || user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="load-status">Estado de la Carga:</label>
+                <select
+                  id="load-status"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  required
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="auth-button">
+                Añadir Carga
+              </button>
+            </form>
+            {addLoadMessage && (
+              <p className="auth-message success">{addLoadMessage}</p>
+            )}
+            {addLoadError && (
+              <p className="auth-message error">{addLoadError}</p>
+            )}
+          </div>
+        )}
 
       {/* Renderizado condicional de la vista (Tabla para Admin, Cards para Mozo de Almacén) */}
-      {userRole === "mozo_almacen" ? (
-        // Vista de Cards para Mozo de Almacén
+      {userRole === "mozo_almacen" || userRole === "chofer" ? ( // Incluye 'chofer' aquí también
+        // Vista de Cards para Mozo de Almacén y Chofer
         <div className="loads-cards-container">
           {sortedLoads.length === 0 && searchTerm !== "" ? (
             <p>No se encontraron cargas que coincidan con la búsqueda.</p>
@@ -484,7 +494,9 @@ function CargasPage({ userRole }) {
                   </p>
                   <p>
                     <strong>Fecha Descarga:</strong>{" "}
-                    {formatDate(load.unloadDate)}
+                    {load.unloadDate
+                      ? formatDate(load.unloadDate)
+                      : "Pendiente"}
                   </p>
                   <p>
                     <strong>Barco:</strong> {getBoatName(load.associatedBoatId)}
@@ -497,8 +509,8 @@ function CargasPage({ userRole }) {
                   </p>
                 </div>
                 <div className="card-actions">
-                  {/* Botón "Ver Detalles" para mozo de almacén */}
-                  {userRole === "mozo_almacen" && (
+                  {/* Botón "Ver Detalles" para mozo de almacén y chofer */}
+                  {(userRole === "mozo_almacen" || userRole === "chofer") && (
                     <button
                       onClick={() => handleViewLoadDetails(load.id)}
                       className="add-palet-button"
@@ -511,7 +523,7 @@ function CargasPage({ userRole }) {
             ))
           )}
         </div>
-      ) : // Vista de Tabla para Administrador (y otros roles por defecto)
+      ) : // Vista de Tabla para Administrador y Oficina
       sortedLoads.length === 0 && searchTerm !== "" ? (
         <p>No se encontraron cargas que coincidan con la búsqueda.</p>
       ) : sortedLoads.length === 0 && searchTerm === "" ? (
@@ -524,7 +536,7 @@ function CargasPage({ userRole }) {
               <th>Fecha Carga</th>
               <th>Fecha Descarga</th>
               <th>Barco Asociado</th>
-              <th>Chofer</th>
+              <th>Chofer</th> {/* <-- Añadido el thead para Chofer */}
               <th>Estado</th>
               <th>Creado Por</th>
               <th>Fecha Creación</th>
@@ -537,35 +549,31 @@ function CargasPage({ userRole }) {
               <tr key={load.id}>
                 <td>{load.loadName}</td>
                 <td>{formatDate(load.loadDate)}</td>
-                <td>{formatDate(load.unloadDate)}</td>
+                <td>{load.unloadDate ? formatDate(load.unloadDate) : "N/A"}</td>
                 <td>{getBoatName(load.associatedBoatId)}</td>
-                <td>{getUserDisplayName(load.driverId)}</td>
+                <td>{getUserDisplayName(load.driverId)}</td>{" "}
+                {/* <-- Añadido el td para Chofer */}
                 <td>{load.status}</td>
                 <td>{getUserDisplayName(load.createdBy)}</td>
                 <td>{formatDate(load.createdAt)}</td>
                 <td>{formatDate(load.updatedAt)}</td>
                 <td>
-                  <button
-                    onClick={() => handleModifyLoad(load.id)}
-                    className="modify-button"
-                  >
-                    Modificar
-                  </button>
+                  {/* Botón "Ver Detalles" eliminado de la tabla */}
+                  {isAdminUser && ( // <-- Usa la nueva prop isAdminUser aquí
+                    <button
+                      onClick={() => navigate(`/admin/cargas/edit/${load.id}`)}
+                      className="modify-button"
+                      style={{ marginLeft: "5px" }}
+                    >
+                      Editar
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-
-      {/* Modal para añadir palet (ELIMINADO DE AQUÍ) */}
-      {/* {showAddPaletModal && selectedLoadForPalet && (
-        <AddPaletForm
-          loadId={selectedLoadForPalet}
-          onClose={handleCloseAddPaletModal}
-          onPaletAdded={handlePaletAdded}
-        />
-      )} */}
     </div>
   );
 }

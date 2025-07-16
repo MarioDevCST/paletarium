@@ -1412,3 +1412,115 @@ code {
   background-color: #c82333;
   transform: translateY(-1px);
 }
+
+/* --- NUEVOS ESTILOS PARA PACKINGLISTPAGE --- */
+.packing-list-container {
+  width: 100%;
+  max-width: 800px; /* Ancho máximo para el documento */
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.packing-list-container .back-button,
+.packing-list-container .generate-pdf-button {
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease;
+}
+
+.packing-list-container .back-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+}
+
+.packing-list-container .back-button:hover {
+  background-color: #5a6268;
+}
+
+.packing-list-container .generate-pdf-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  margin-left: 10px;
+}
+
+.packing-list-container .generate-pdf-button:hover {
+  background-color: #218838;
+}
+
+.packing-list-content {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box; /* Asegura que el padding se incluya en el ancho */
+  background-color: white; /* Fondo blanco para el PDF */
+}
+
+.packing-list-header {
+  text-align: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #333; /* Línea separadora */
+  padding-bottom: 10px;
+}
+
+.packing-list-logo {
+  max-width: 100px; /* Ajusta el tamaño del logo */
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.packing-list-header h1 {
+  font-size: 2.2em;
+  color: #333;
+  margin: 10px 0;
+}
+
+.packing-list-header .header-info {
+  display: flex;
+  justify-content: space-around;
+  font-size: 1.1em;
+  color: #555;
+  margin-top: 15px;
+}
+
+.packing-list-header .header-info p {
+  margin: 0;
+}
+
+.packing-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.9em;
+}
+
+.packing-list-table th,
+.packing-list-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.packing-list-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.packing-list-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.packing-list-table tbody tr:hover {
+  background-color: #f0f0f0;
+}
