@@ -1,88 +1,51 @@
 import React from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
-
+import { Routes, Route, Link, Navigate } from "react-router-dom"; // Importa Navigate
 import AdminUserList from "./AdminUserList";
-import BarcosPage from "./BarcosPage";
-import CargasPage from "./CargasPage";
-import ProductPage from "./ProductPage";
-import UserEditPage from "./UserEditPage";
-import BoatEditPage from "./BoatEditPage";
-import CargasEditPage from "./CargasEditPage"; // <-- Asegúrate de que esta importación esté aquí
-import ProductEditPage from "./ProductEditPage";
+import BarcosPage from "../pages/BarcosPage";
+import CargasPage from "../pages/CargasPage";
+import ProductPage from "../pages/ProductPage";
 
-function AdminPanel({ userRole }) {
-  // <-- Recibe userRole como prop
-  const location = useLocation(); // Hook para obtener la URL actual
-
+function AdminPanel({ userProfile }) {
+  // <-- Acepta userProfile como prop
+  // --- DEBUGGING LOG ---
+  console.log("AdminPanel - Current path:", window.location.pathname);
+  // --- FIN DEBUGGING LOG ---
   return (
     <div className="admin-panel-container">
       <h2>Panel de Administración</h2>
-      <p>
-        Bienvenido al área de administración. Desde aquí puedes gestionar
-        usuarios, barcos, cargas, etc.
-      </p>
-
-      {/* Menú de Navegación del Admin usando Link con rutas absolutas */}
       <nav className="admin-nav">
-        <Link
-          to="/admin/users"
-          className={`admin-nav-button ${
-            location.pathname.includes("/admin/users") ? "active" : ""
-          }`}
-        >
-          Gestionar Usuarios
+        {/* Rutas absolutas para asegurar la navegación correcta */}
+        <Link to="/admin/users" className="admin-nav-button">
+          Gestión de Usuarios
         </Link>
-        <Link
-          to="/admin/barcos"
-          className={`admin-nav-button ${
-            location.pathname.includes("/admin/barcos") ? "active" : ""
-          }`}
-        >
-          Gestionar Barcos
+        <Link to="/admin/barcos" className="admin-nav-button">
+          Gestión de Barcos
         </Link>
-        <Link
-          to="/admin/cargas"
-          className={`admin-nav-button ${
-            location.pathname.includes("/admin/cargas") ? "active" : ""
-          }`}
-        >
-          Gestionar Cargas
+        <Link to="/admin/cargas" className="admin-nav-button">
+          Gestión de Cargas
         </Link>
-        <Link
-          to="/admin/products"
-          className={`admin-nav-button ${
-            location.pathname.includes("/admin/products") ? "active" : ""
-          }`}
-        >
-          Gestionar Productos
+        <Link to="/admin/products" className="admin-nav-button">
+          Gestión de Productos
         </Link>
       </nav>
-
-      {/* Contenido de la página de administración activa */}
       <div className="admin-content-area">
         <Routes>
-          {/* Rutas anidadas dentro de /admin. */}
           <Route path="users" element={<AdminUserList />} />
-          <Route path="barcos" element={<BarcosPage />} />
+          {/* Pasa userProfile a los componentes de página */}
+          <Route
+            path="barcos"
+            element={<BarcosPage userProfile={userProfile} />}
+          />
           <Route
             path="cargas"
-            element={<CargasPage userRole={userRole} />}
-          />{" "}
-          {/* <-- userRole pasado a CargasPage */}
-          <Route path="products" element={<ProductPage />} />
-          {/* Ruta para editar un usuario específico */}
-          <Route path="users/edit/:userId" element={<UserEditPage />} />
-          {/* Ruta para editar un barco específico */}
-          <Route path="barcos/edit/:boatId" element={<BoatEditPage />} />
-          {/* Ruta para editar una carga específica */}
-          <Route path="cargas/edit/:loadId" element={<CargasEditPage />} />
-          {/* Ruta para editar un producto específico */}
-          <Route
-            path="products/edit/:productId"
-            element={<ProductEditPage />}
+            element={<CargasPage userProfile={userProfile} />}
           />
-          {/* Ruta por defecto para /admin (redirige a /admin/users) */}
-          <Route path="/" element={<AdminUserList />} />
+          <Route
+            path="products"
+            element={<ProductPage userProfile={userProfile} />}
+          />
+          {/* Redirige a /admin/users por defecto dentro del panel de administración */}
+          <Route path="/" element={<Navigate to="users" replace />} />
         </Routes>
       </div>
     </div>

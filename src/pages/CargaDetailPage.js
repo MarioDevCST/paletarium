@@ -10,17 +10,17 @@ import {
   onSnapshot,
   getDocs,
   deleteDoc,
-} from "firebase/firestore"; // Importa deleteDoc
+} from "firebase/firestore";
 
 import ManagePaletProductsModal from "../components/ManagePaletProductsModal";
-import PaletViewModal from "../components/PaletViewModal"; // Importa el PaletViewModal
-import PaletCard from "../components/PaletCard"; // Asegúrate de importar PaletCard
+import PaletViewModal from "../components/PaletViewModal";
+import PaletCard from "../components/PaletCard";
 
 function CargaDetailPage({ userRole }) {
   const { loadId } = useParams();
   const navigate = useNavigate();
 
-  console.log("CargaDetailPage: Componente montado. loadId:", loadId); // <-- Log de depuración
+  console.log("CargaDetailPage: Componente montado. loadId:", loadId);
 
   const [loadData, setLoadData] = useState(null);
   const [palets, setPalets] = useState([]);
@@ -34,10 +34,10 @@ function CargaDetailPage({ userRole }) {
   const [showPaletViewModal, setShowPaletViewModal] = useState(false);
   const [viewingPaletData, setViewingPaletData] = useState(null);
 
-  const [allUsersMap, setAllUsersMap] = useState({}); // Mapa para userId -> {nombre, email}
-  const [boatsList, setBoatsList] = useState([]); // Lista de barcos para mostrar el nombre
-  const [currentBoatName, setCurrentBoatName] = useState("Cargando Barco..."); // Nuevo estado para el nombre del barco
-  const [productsMap, setProductsMap] = useState({}); // Mapa para productId -> productData
+  const [allUsersMap, setAllUsersMap] = useState({});
+  const [boatsList, setBoatsList] = useState([]);
+  const [currentBoatName, setCurrentBoatName] = useState("Cargando Barco...");
+  const [productsMap, setProductsMap] = useState({});
 
   // Función para obtener todos los usuarios, barcos y productos
   useEffect(() => {
@@ -79,6 +79,7 @@ function CargaDetailPage({ userRole }) {
         console.log("CargaDetailPage - boatsList fetched:", boats);
       } catch (err) {
         console.error("Error al cargar datos auxiliares:", err);
+        setError("Error al cargar datos auxiliares.");
       }
     };
     fetchAuxiliaryData();
@@ -146,10 +147,9 @@ function CargaDetailPage({ userRole }) {
       setCurrentBoatName(name);
       console.log("CargaDetailPage - currentBoatName updated:", name);
     } else if (loadData && boatsList.length === 0 && !loading) {
-      // Si boatsList está vacío después de cargar
       setCurrentBoatName("Barco Desconocido (no encontrado)");
     }
-  }, [loadData, boatsList, loading]); // Depende de loadData, boatsList y el estado de carga
+  }, [loadData, boatsList, loading]);
 
   const handleOpenManagePaletModal = (palet = null) => {
     if (palet) {
@@ -169,8 +169,6 @@ function CargaDetailPage({ userRole }) {
   };
 
   const handlePaletUpdated = () => {
-    // Esto disparará la re-lectura de palets debido al onSnapshot
-    // y la UI se actualizará automáticamente.
     console.log("Palet actualizado, la UI se refrescará automáticamente.");
   };
 
@@ -186,6 +184,11 @@ function CargaDetailPage({ userRole }) {
 
   const handleGoToRealizarCarga = () => {
     navigate(`/cargas/select-palets/${loadId}`);
+  };
+
+  // NUEVO: Manejador para ir a la página de vista previa del packing list
+  const handleViewPackingList = () => {
+    navigate(`/cargas/packing-list/${loadId}`);
   };
 
   // Función para obtener el nombre de usuario por ID
@@ -228,7 +231,7 @@ function CargaDetailPage({ userRole }) {
 
   // Función para eliminar un palet
   const handleDeletePalet = async (e, paletIdToDelete, paletName) => {
-    e.stopPropagation(); // Evita que se abra el modal de vista del palet al hacer clic en el botón de eliminar
+    e.stopPropagation();
     if (
       window.confirm(
         `¿Estás seguro de que quieres eliminar el palet "${paletName}"?`
@@ -238,7 +241,6 @@ function CargaDetailPage({ userRole }) {
         const paletDocRef = doc(db, "palets", paletIdToDelete);
         await deleteDoc(paletDocRef);
         console.log(`Palet ${paletIdToDelete} eliminado exitosamente.`);
-        // onSnapshot se encargará de actualizar la lista de palets automáticamente
       } catch (err) {
         console.error("Error al eliminar palet:", err);
         setError(
@@ -309,8 +311,7 @@ function CargaDetailPage({ userRole }) {
           </p>
           <p>
             <strong>Barco Asociado:</strong> {currentBoatName}
-          </p>{" "}
-          {/* Muestra el nombre del barco */}
+          </p>
           <p>
             <strong>Chofer:</strong> {getUserDisplayName(loadData.driverId)}
           </p>
@@ -342,6 +343,18 @@ function CargaDetailPage({ userRole }) {
               Realizar Carga
             </button>
           )}
+          {/* NUEVO BOTÓN PARA VER PACKING LIST */}
+          {(userRole === "admin" ||
+            userRole === "oficina" ||
+            userRole === "mozo_almacen") && (
+            <button
+              onClick={handleViewPackingList}
+              className="add-palet-button"
+              style={{ marginLeft: "10px" }}
+            >
+              Ver Packing List
+            </button>
+          )}
         </div>
       </div>
 
@@ -360,8 +373,6 @@ function CargaDetailPage({ userRole }) {
         <div className="palets-list-container">
           {palets.map((palet) => (
             <div key={palet.id}>
-              {" "}
-              {/* Contenedor para la tarjeta y los botones */}
               <PaletCard
                 palet={palet}
                 getProductName={getProductName}
@@ -371,8 +382,6 @@ function CargaDetailPage({ userRole }) {
                 formatoPalet={palet.formatoPalet}
               />
               <div className="palet-card-actions">
-                {" "}
-                {/* Nuevo div para los botones de la tarjeta de palet */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -380,13 +389,11 @@ function CargaDetailPage({ userRole }) {
                   }}
                   className="modify-button small-button"
                 >
-                  {" "}
-                  {/* Añadida clase small-button */}
                   Editar Palet
                 </button>
                 <button
                   onClick={(e) => handleDeletePalet(e, palet.id, palet.nombre)}
-                  className="delete-button small-button" // Añadida clase small-button
+                  className="delete-button small-button"
                 >
                   Borrar Palet
                 </button>

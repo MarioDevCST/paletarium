@@ -1,48 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Importa useLocation
+import { Routes, Route, Navigate } from "react-router-dom";
 import { auth, db } from "../firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-
-import Header from "./Header";
-import SideMenu from "./SideMenu";
 import ProtectedRoute from "./ProtectedRoute";
+import Header from "./Header"; // Importa el componente Header
+import SideMenu from "./SideMenu"; // Importa el componente SideMenu
 
 // Importa tus páginas
+import Dashboard from "../pages/Dashboard"; // Asumiendo que tienes una página Dashboard
 import AdminPanel from "../pages/AdminPanel";
-import BarcosPage from "../pages/BarcosPage";
-import CargasPage from "../pages/CargasPage";
-import ProductPage from "../pages/ProductPage";
 import PendingApprovalPage from "../pages/PendingApprovalPage";
-import CargaDetailPage from "../pages/CargaDetailPage"; // <-- Importa la nueva página de detalles de carga
-import LoadPaletSelectionPage from "../pages/LoadPaletSelectionPage"; // <-- Importa LoadPaletSelectionPage
+import BarcosPage from "../pages/BarcosPage";
+import CargasPage from "../pages/CargasPage"; // Importa CargasPage
+import ProductPage from "../pages/ProductPage";
+import LoadPaletSelectionPage from "../pages/LoadPaletSelectionPage";
+import CargaDetailPage from "../pages/CargaDetailPage";
+import PackingListPage from "../pages/PackingListPage";
 
-// Componente para el dashboard de usuario normal
-const UserDashboardPage = () => (
-  <div className="main-content-logged-in">
-    <p style={{ color: "green", textAlign: "center", marginTop: "50px" }}>
-      ¡Bienvenido! Tu cuenta ha sido aprobada.
-    </p>
-    <p style={{ textAlign: "center" }}>
-      Contenido principal de la aplicación para usuarios.
-    </p>
-  </div>
-);
+import UserEditPage from "../pages/UserEditPage";
+import BoatEditPage from "../pages/BoatEditPage";
+import CargasEditPage from "../pages/CargasEditPage";
+import ProductEditPage from "../pages/ProductEditPage";
 
 function AuthHandler() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false); // Indica si la comprobación de auth ha terminado
-  const location = useLocation(); // Hook para obtener la ubicación actual
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      console.log("--- onAuthStateChanged Triggered in AuthHandler ---");
-      console.log("firebaseUser object:", firebaseUser);
+      console.log("--- AuthHandler - onAuthStateChanged Triggered ---");
+      console.log("AuthHandler - firebaseUser object:", firebaseUser);
+      setLoading(true); // Asegura que el estado de carga se active al inicio del cambio de estado de autenticación
 
       if (firebaseUser) {
         setUser(firebaseUser);
         console.log(
-          "AuthHandler: Usuario de Auth detectado (UID):",
+          "AuthHandler - Usuario de Auth detectado (UID):",
           firebaseUser.uid
         );
 
@@ -54,106 +48,83 @@ function AuthHandler() {
             const userData = userDocSnap.data();
             setUserProfile(userData);
             console.log(
-              "AuthHandler: Perfil de usuario de Firestore cargado:",
+              "AuthHandler - Perfil de usuario de Firestore cargado:",
               userData
             );
-            console.log("AuthHandler: Rol del usuario cargado:", userData.role);
+            console.log(
+              "AuthHandler - Rol del usuario cargado:",
+              userData.role
+            );
           } else {
             console.warn(
-              "AuthHandler: Perfil de usuario no encontrado en Firestore para UID:",
+              "AuthHandler - Perfil de usuario no encontrado en Firestore para UID:",
               firebaseUser.uid
             );
-            // Si el usuario existe en Auth pero no en Firestore, cerrar su sesión.
+            setUserProfile(null);
+            // Si no hay perfil de Firestore, forzar cierre de sesión
             await auth.signOut();
             setUser(null);
-            setUserProfile(null);
           }
         } catch (error) {
           console.error(
-            "AuthHandler: Error al cargar el perfil de usuario de Firestore:",
+            "AuthHandler - Error al cargar el perfil de usuario de Firestore:",
             error
           );
+          setUserProfile(null);
           await auth.signOut();
           setUser(null);
-          setUserProfile(null);
+        } finally {
+          setLoading(false); // Establece loading a false solo después de intentar cargar el perfil
+          console.log("--- AuthHandler - onAuthStateChanged Finished ---");
         }
       } else {
         setUser(null);
         setUserProfile(null);
-        console.log("AuthHandler: No hay usuario logeado.");
+        console.log("AuthHandler - No hay usuario logeado.");
+        setLoading(false); // También establece a false si no hay usuario logeado
+        console.log("--- AuthHandler - onAuthStateChanged Finished ---");
       }
-      setAuthChecked(true); // La comprobación de autenticación ha finalizado
-      console.log("--- onAuthStateChanged Finished in AuthHandler ---");
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Mostrar un estado de carga hasta que la comprobación de autenticación inicial se complete
-  if (!authChecked) {
-    console.log("AuthHandler: Comprobación de autenticación en curso...");
+  if (loading) {
     return <div>Cargando aplicación...</div>;
   }
 
-  // Si no hay usuario autenticado después de la comprobación, redirigir al login
+  // Redirige a /login si no hay usuario autenticado
   if (!user) {
-    console.log("AuthHandler: No autenticado, redirigiendo a /login");
     return <Navigate to="/login" replace />;
   }
 
-  // Si hay usuario pero no userProfile (esto no debería pasar si la lógica de arriba funciona, pero es un fallback)
+  // Si el usuario está autenticado pero su perfil aún no se ha cargado/determinado
+  // Esto es una capa de seguridad extra si 'loading' se resuelve antes que 'userProfile'
   if (!userProfile) {
-    console.log("AuthHandler: Usuario autenticado pero perfil no cargado.");
-    return <div>Cargando perfil de usuario...</div>;
-  }
-
-  // Lógica de redirección basada en el rol y estado del usuario logeado
-  let targetPath = "/dashboard";
-  if (userProfile.status === "pending") {
-    targetPath = "/pending-approval";
-  } else if (userProfile.role === "admin") {
-    targetPath = "/admin";
-  }
-
-  // Si el usuario está pendiente de aprobación, solo renderizamos la PendingApprovalPage
-  // y redirigimos a ella si no está ya en esa ruta.
-  if (userProfile.status === "pending") {
     console.log(
-      "AuthHandler: Usuario pendiente de aprobación. Path actual:",
-      location.pathname,
-      "Target path:",
-      targetPath
+      "AuthHandler - Usuario autenticado pero perfil no cargado, mostrando 'Preparando sesión...'"
     );
-    return location.pathname === "/pending-approval" ? (
-      <PendingApprovalPage />
-    ) : (
-      <Navigate to="/pending-approval" replace />
-    );
+    return <div>Preparando sesión...</div>;
   }
 
-  console.log(
-    "AuthHandler: Usuario aprobado/admin. Renderizando layout principal. Path actual:",
-    location.pathname
-  );
-  console.log("AuthHandler: Rutas a renderizar. User role:", userProfile?.role);
-  console.log(
-    "AuthHandler: Location pathname antes de Routes:",
-    location.pathname
-  ); // <-- Nuevo log
-  console.log("AuthHandler: UserProfile antes de Routes:", userProfile); // <-- Nuevo log
+  // Si el usuario está autenticado pero su perfil no está aprobado y no es admin, redirige a pending-approval
+  if (userProfile.status === "pending" && userProfile.role !== "admin") {
+    // Si ya está en /pending-approval, no redirigir para evitar bucles
+    if (window.location.pathname !== "/pending-approval") {
+      return <Navigate to="/pending-approval" replace />;
+    }
+  }
 
-  // Si el usuario está aprobado o es admin, renderizamos el layout completo
   return (
-    <>
-      <Header user={user} userProfile={userProfile} />
+    <div className="app-container-logged-in">
+      <Header user={user} userProfile={userProfile} />{" "}
+      {/* Pasa user y userProfile al Header */}
       <div className="app-content-logged-in">
-        <SideMenu userRole={userProfile?.role} />
+        <SideMenu userRole={userProfile?.role} />{" "}
+        {/* Pasa el rol al SideMenu */}
         <main className="main-content-logged-in">
           <Routes>
-            {/* Redirección inicial desde la raíz si el usuario no está en su ruta correcta */}
-            <Route path="/" element={<Navigate to={targetPath} replace />} />
-
-            {/* Rutas protegidas para usuarios autenticados y aprobados */}
+            {/* Rutas accesibles para todos los usuarios autenticados y aprobados */}
             <Route
               path="/dashboard"
               element={
@@ -163,29 +134,10 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <UserDashboardPage />
+                  <Dashboard />
                 </ProtectedRoute>
               }
             />
-
-            {/* Rutas protegidas para administradores */}
-            <Route
-              path="/admin/*" // Esta ruta maneja todas las sub-rutas de /admin
-              element={
-                <ProtectedRoute
-                  isAuthenticated={!!user}
-                  isApproved={userProfile?.status === "approved"}
-                  isAdmin={userProfile?.role === "admin"}
-                  userRole={userProfile?.role}
-                  requiredRole="admin"
-                >
-                  <AdminPanel userRole={userProfile?.role} />{" "}
-                  {/* <-- userRole pasado a AdminPanel */}
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Otras rutas protegidas (no bajo /admin) */}
             <Route
               path="/barcos"
               element={
@@ -195,7 +147,8 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <BarcosPage userRole={userProfile?.role} />
+                  <BarcosPage userRole={userProfile?.role} />{" "}
+                  {/* Pasa el rol a BarcosPage */}
                 </ProtectedRoute>
               }
             />
@@ -208,13 +161,14 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <CargasPage userRole={userProfile?.role} />
+                  {/* Pasa el objeto userProfile completo a CargasPage */}
+                  <CargasPage userProfile={userProfile} />
                 </ProtectedRoute>
               }
             />
-            {/* Nueva ruta para el detalle de la carga */}
+            {/* Ruta para la página de detalles de una carga específica */}
             <Route
-              path="/cargas/:loadId/details"
+              path="/cargas/detail/:loadId"
               element={
                 <ProtectedRoute
                   isAuthenticated={!!user}
@@ -222,13 +176,14 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <CargaDetailPage userRole={userProfile?.role} />
+                  <CargaDetailPage userRole={userProfile?.role} />{" "}
+                  {/* <-- Ruta para CargaDetailPage */}
                 </ProtectedRoute>
               }
             />
-            {/* Ruta para la selección de palets */}
+            {/* Nueva ruta para la selección de palets */}
             <Route
-              path="/cargas/select-palets/:loadId" // <-- Asegúrate de que esta ruta esté aquí
+              path="/cargas/select-palets/:loadId"
               element={
                 <ProtectedRoute
                   isAuthenticated={!!user}
@@ -236,7 +191,22 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <LoadPaletSelectionPage />
+                  <LoadPaletSelectionPage userRole={userProfile?.role} />{" "}
+                  {/* <-- Nueva ruta */}
+                </ProtectedRoute>
+              }
+            />
+            {/* NUEVA RUTA PARA EL PACKING LIST */}
+            <Route
+              path="/cargas/packing-list/:loadId"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                >
+                  <PackingListPage /> {/* <-- NUEVA RUTA */}
                 </ProtectedRoute>
               }
             />
@@ -249,7 +219,83 @@ function AuthHandler() {
                   isAdmin={userProfile?.role === "admin"}
                   userRole={userProfile?.role}
                 >
-                  <ProductPage userRole={userProfile?.role} />
+                  <ProductPage userRole={userProfile?.role} />{" "}
+                  {/* Pasa el rol a ProductPage */}
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rutas protegidas para administradores */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                  requiredRole="admin"
+                >
+                  {/* Pasa userProfile a AdminPanel */}
+                  <AdminPanel userProfile={userProfile} />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rutas de edición (accesibles por admin o por el propio usuario en algunos casos, según las reglas de Firestore) */}
+            <Route
+              path="/admin/users/edit/:userId"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                  requiredRole="admin" // Solo admin puede editar usuarios
+                >
+                  <UserEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/barcos/edit/:boatId"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                  requiredRole="admin"
+                >
+                  <BoatEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/cargas/edit/:loadId"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                  requiredRole="admin" // Solo admin puede editar cargas
+                >
+                  <CargasEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/products/edit/:productId"
+              element={
+                <ProtectedRoute
+                  isAuthenticated={!!user}
+                  isApproved={userProfile?.status === "approved"}
+                  isAdmin={userProfile?.role === "admin"}
+                  userRole={userProfile?.role}
+                  requiredRole="admin" // Solo admin puede editar productos
+                >
+                  <ProductEditPage />
                 </ProtectedRoute>
               }
             />
@@ -270,12 +316,30 @@ function AuthHandler() {
               }
             />
 
-            {/* Fallback para cualquier ruta no coincidente cuando está logeado y aprobado/admin */}
+            {/* Redirige a /dashboard si el usuario está logeado y aprobado y accede a la raíz */}
+            {user && userProfile?.status === "approved" && (
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            )}
+            {/* Redirige a /admin/users si el usuario es admin y accede a la raíz o a /admin */}
+            {user && userProfile?.role === "admin" && (
+              <Route
+                path="/admin"
+                element={<Navigate to="/admin/users" replace />}
+              />
+            )}
+            {user && userProfile?.role === "admin" && (
+              <Route
+                path="/"
+                element={<Navigate to="/admin/users" replace />}
+              />
+            )}
+
+            {/* Cualquier otra ruta no definida */}
             <Route path="*" element={<div>404 - Página no encontrada</div>} />
           </Routes>
         </main>
       </div>
-    </>
+    </div>
   );
 }
 
